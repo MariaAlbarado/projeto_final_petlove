@@ -1,3 +1,5 @@
+import { PetEntity } from "../entidades/Pet.js";
+import { validarPetHandler } from "../middlewares/global/validarPetHandler.js";
 import { Router } from "express";
 
 import bcrypt from "bcrypt"; // lib gerar hash da senha
@@ -14,6 +16,8 @@ import { autorizarHandler } from "../middlewares/auth/autorizarHandler.js";
 const authRoutes = new Router();
 
 const usuarioRepository = AppDataSource.getRepository(UsuarioEntity);
+
+const petRepository = AppDataSource.getRepository(PetEntity);
 
 authRoutes.post(
   "/auth/usuarios",
@@ -44,6 +48,20 @@ authRoutes.post(
         .status(CREATED_STATUS)
         .send({ nome: dados.nome, role: dados.role });
     }
+  },
+);
+
+authRoutes.post(
+  "/pets",
+  autorizarHandler(ROLES.ADMIN, ROLES.FUNCIONARIO),
+  validarPetHandler,
+  async (request, response) => {
+    const dados = request.body;
+
+    const novoPet = petRepository.create(dados);
+    const petSalvo = await petRepository.save(novoPet);
+
+    return response.status(CREATED_STATUS).send(petSalvo);
   },
 );
 

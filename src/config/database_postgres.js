@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { DataSource } from "typeorm";
 import { UsuarioEntity } from "../entidades/Usuario.js";
+import { PetEntity } from "../entidades/Pet.js";
 
 const dbPort = Number(process.env.DB_PORT);
 const loggingEnabled = process.env.DB_LOGGING === "true";
@@ -14,5 +15,5 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME,
   synchronize: false,
   logging: loggingEnabled,
-  entities: [UsuarioEntity],
+  entities: [UsuarioEntity, PetEntity],
 });
