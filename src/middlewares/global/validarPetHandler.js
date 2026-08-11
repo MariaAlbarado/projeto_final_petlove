@@ -58,10 +58,7 @@ export async function validarPetHandler(request, response, next) {
       .send({ error: "O campo 'sexo' deve ser 'M' ou 'F'." });
   }
 
-  if (
-    dados.idade_meses !== underfined &&
-    !Number.isInteger(dados.idade_meses)
-  ) {
+  if (dados.idade_meses !== undefined && !Number.isInteger(dados.idade_meses)) {
     return response
       .status(400)
       .send({ error: "O campo 'idade_meses' deve ser um número inteiro." });
