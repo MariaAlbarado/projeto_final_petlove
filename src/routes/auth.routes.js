@@ -65,4 +65,20 @@ authRoutes.post(
   },
 );
 
+authRoutes.get(
+  "/pets",
+  autorizarHandler(ROLES.ADMIN, ROLES.FUNCIONARIO),
+  async (request, response) => {
+    const pets = await petRepository.find({
+      relations: {
+        tipo: true,
+        raca: true,
+        cor: true,
+      },
+    });
+
+    return response.status(200).send(pets);
+  },
+);
+
 export default authRoutes;

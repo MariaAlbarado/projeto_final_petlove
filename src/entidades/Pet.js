@@ -63,4 +63,28 @@ export const PetEntity = new EntitySchema({
       nullable: true,
     },
   },
+
+  relations: {
+    tipo: {
+      target: "Tipo",
+      type: "many-to-one",
+      joinColumn: {
+        name: "tipo_id",
+      },
+    },
+    raca: {
+      type: "many-to-one",
+      target: "Raca",
+      joinColumn: {
+        name: "raca_id",
+      },
+    },
+    cor: {
+      type: "many-to-one",
+      target: "Cor",
+      joinColumn: {
+        name: "cor_id",
+      },
+    },
+  },
 });
