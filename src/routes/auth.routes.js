@@ -1,6 +1,7 @@
 import { PetEntity } from "../entidades/Pet.js";
 import { validarPetHandler } from "../middlewares/global/validarPetHandler.js";
 import { Router } from "express";
+import { verifyIdExistsHandler } from "../middlewares/global/verifyIdExistsHandler.js";
 
 import bcrypt from "bcrypt"; // lib gerar hash da senha
 import jwt from "jsonwebtoken"; // lib que vai gerar o token do usuario
@@ -78,6 +79,15 @@ authRoutes.get(
     });
 
     return response.status(200).send(pets);
+  },
+);
+
+authRoutes.get(
+  "/pets/:id",
+  autorizarHandler(ROLES.ADMIN, ROLES.FUNCIONARIO),
+  verifyIdExistsHandler(PetEntity, "Pet"),
+  async (request, response) => {
+    return response.status(200).send(request.cachorro);
   },
 );
 
