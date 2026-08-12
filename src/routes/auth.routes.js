@@ -2,6 +2,7 @@ import { PetEntity } from "../entidades/Pet.js";
 import { validarPetHandler } from "../middlewares/global/validarPetHandler.js";
 import { Router } from "express";
 import { verifyIdExistsHandler } from "../middlewares/global/verifyIdExistsHandler.js";
+import { validarAtualizacaoPetHandler } from "../middlewares/global/ValidarAtualizacaoPetHandler.js";
 
 import bcrypt from "bcrypt"; // lib gerar hash da senha
 import jwt from "jsonwebtoken"; // lib que vai gerar o token do usuario
@@ -88,6 +89,21 @@ authRoutes.get(
   verifyIdExistsHandler(PetEntity, "Pet"),
   async (request, response) => {
     return response.status(200).send(request.cachorro);
+  },
+);
+
+authRoutes.patch(
+  "/pets/:id",
+  autorizarHandler(ROLES.ADMIN, ROLES.FUNCIONARIO),
+  verifyIdExistsHandler(PetEntity, "Pet"),
+  validarAtualizacaoPetHandler,
+  async (request, response) => {
+    const dados = request.body;
+    const petAtualizado = petRepository.merge(request.cachorro, dados);
+
+    const petSalvo = await petRepository.save(petAtualizado);
+
+    return response.status(200).send(petSalvo);
   },
 );
 
