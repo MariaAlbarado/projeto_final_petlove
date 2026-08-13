@@ -15,11 +15,16 @@ import { ROLES } from "../constants/roles.js";
 
 import { autorizarHandler } from "../middlewares/auth/autorizarHandler.js";
 
+import { LarAdotivoEntity } from "../entidades/LarAdotivo.js";
+import { validarLarAdotivoHandler } from "../middlewares/global/validarLarAdotivoHandler.js";
+
 const authRoutes = new Router();
 
 const usuarioRepository = AppDataSource.getRepository(UsuarioEntity);
 
 const petRepository = AppDataSource.getRepository(PetEntity);
+
+const larAdotivoRepository = AppDataSource.getRepository(LarAdotivoEntity);
 
 authRoutes.post(
   "/auth/usuarios",
@@ -124,6 +129,20 @@ authRoutes.delete(
     }
     await petRepository.remove(request.cachorro);
     return response.status(204).send();
+  },
+);
+
+authRoutes.post(
+  "/Lares",
+  autorizarHandler(ROLES.ADMIN, ROLES.FUNCIONARIO),
+  validarLarAdotivoHandler,
+  async (request, response) => {
+    const dados = request.body;
+
+    const novoLar = larAdotivoRepository.create(dados);
+    const larSalvo = await larAdotivoRepository.save(novoLar);
+
+    return response.status(CREATED_STATUS).send(larSalvo);
   },
 );
 

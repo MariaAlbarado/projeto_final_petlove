@@ -5,6 +5,7 @@ import { PetEntity } from "../entidades/Pet.js";
 import { CorEntity } from "../entidades/Cor.js";
 import { RacaEntity } from "../entidades/Raca.js";
 import { TipoEntity } from "../entidades/Tipo.js";
+import { LarAdotivoEntity } from "../entidades/LarAdotivo.js";
 
 const dbPort = Number(process.env.DB_PORT);
 const loggingEnabled = process.env.DB_LOGGING === "true";
@@ -18,5 +19,12 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME,
   synchronize: false,
   logging: loggingEnabled,
-  entities: [UsuarioEntity, PetEntity, CorEntity, RacaEntity, TipoEntity],
+  entities: [
+    UsuarioEntity,
+    PetEntity,
+    CorEntity,
+    RacaEntity,
+    TipoEntity,
+    LarAdotivoEntity,
+  ],
 });
