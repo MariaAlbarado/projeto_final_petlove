@@ -107,4 +107,24 @@ authRoutes.patch(
   },
 );
 
+authRoutes.delete(
+  "/pets/:id",
+  autorizarHandler(ROLES.ADMIN),
+  verifyIdExistsHandler(PetEntity, "Pet"),
+  async (request, response) => {
+    const { id } = request.params;
+    const adocao = await AppDataSource.query(
+      "SELECT * FROM adocoes WHERE pet_id = $1",
+      [id],
+    );
+    if (adocao.length > 0) {
+      return response
+        .status(400)
+        .send({ error: "Não é possível excluir um pet que já foi adotado." });
+    }
+    await petRepository.remove(request.cachorro);
+    return response.status(204).send();
+  },
+);
+
 export default authRoutes;
