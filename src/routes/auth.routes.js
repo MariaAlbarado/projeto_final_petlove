@@ -170,4 +170,13 @@ authRoutes.get(
   },
 );
 
+authRoutes.get(
+  "/lares/:id",
+  autorizarHandler(ROLES.ADMIN, ROLES.FUNCIONARIO),
+  verifyIdExistsHandler(LarAdotivoEntity, "Lar Adotivo"),
+  async (request, response) => {
+    return response.status(200).send(request.cachorro);
+  },
+);
+
 export default authRoutes;
