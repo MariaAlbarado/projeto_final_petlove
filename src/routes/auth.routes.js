@@ -146,4 +146,28 @@ authRoutes.post(
   },
 );
 
+authRoutes.get(
+  "/lares",
+  autorizarHandler(ROLES.ADMIN, ROLES.FUNCIONARIO),
+  async (request, response) => {
+    const { estado, tipo } = request.query;
+
+    const filtros = {};
+
+    if (estado) {
+      filtros.estado = estado;
+    }
+    if (tipo) {
+      filtros.tipo = tipo;
+    }
+    const lares = await larAdotivoRepository.find({
+      where: filtros,
+      order: {
+        criado_em: "ASC",
+      },
+    });
+    return response.status(200).send(lares);
+  },
+);
+
 export default authRoutes;
