@@ -327,4 +327,52 @@ authRoutes.post(
   },
 );
 
+authRoutes.put(
+  "/atualizar_status_adocao",
+  autorizarHandler(ROLES.ADMIN),
+  async (request, response) => {
+    const { status, adocao_id, observacao } = request.body;
+
+    const statusPermitidos = [
+      "ANALISE",
+      "CONCLUIDO",
+      "FINALIZADO",
+      "CANCELADO",
+      "REPROVADO",
+    ];
+
+    if (!status || !adocao_id || !observacao) {
+      return response.status(400).send({
+        error: "status, adocao_id e observacao são obrigatórios.",
+      });
+    }
+
+    if (!statusPermitidos.includes(status)) {
+      return response.status(400).send({
+        error: "Status inválido.",
+      });
+    }
+
+    const adocaoExiste = await adocaoRepository.existsBy({
+      id: Number(adocao_id),
+    });
+
+    if (!adocaoExiste) {
+      return response.status(404).send({
+        error: "Adoção não encontrada.",
+      });
+    }
+
+    const historico = adocaoHistoricoRepository.create({
+      status,
+      adocao_id,
+      observacao,
+    });
+
+    const historicoSalvo = await adocaoHistoricoRepository.save(historico);
+
+    return response.status(200).send(historicoSalvo);
+  },
+);
+
 export default authRoutes;
