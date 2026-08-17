@@ -18,6 +18,8 @@ import { autorizarHandler } from "../middlewares/auth/autorizarHandler.js";
 import { LarAdotivoEntity } from "../entidades/LarAdotivo.js";
 import { validarLarAdotivoHandler } from "../middlewares/global/validarLarAdotivoHandler.js";
 
+import { validarAtualizacaoLarAdotivoHandler } from "../middlewares/global/validarAtualizacaoLarAdotivoHandler.js";
+
 const authRoutes = new Router();
 
 const usuarioRepository = AppDataSource.getRepository(UsuarioEntity);
@@ -176,6 +178,22 @@ authRoutes.get(
   verifyIdExistsHandler(LarAdotivoEntity, "Lar Adotivo"),
   async (request, response) => {
     return response.status(200).send(request.cachorro);
+  },
+);
+
+authRoutes.patch(
+  "/lares/:id",
+  autorizarHandler(ROLES.ADMIN, ROLES.FUNCIONARIO),
+  verifyIdExistsHandler(LarAdotivoEntity, "Lar Adotivo"),
+  validarAtualizacaoLarAdotivoHandler,
+  async (request, response) => {
+    const dados = request.body;
+
+    larAdotivoRepository.merge(request.cachorro, dados);
+
+    const larAtualizado = await larAdotivoRepository.save(request.cachorro);
+
+    return response.status(200).send(larAtualizado);
   },
 );
 
