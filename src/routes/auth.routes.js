@@ -20,6 +20,10 @@ import { validarLarAdotivoHandler } from "../middlewares/global/validarLarAdotiv
 
 import { validarAtualizacaoLarAdotivoHandler } from "../middlewares/global/validarAtualizacaoLarAdotivoHandler.js";
 
+import { AdocaoEntity } from "../entidades/Adocao.js";
+
+import { AdocaoHistoricoEntity } from "../entidades/AdocaoHistorico.js";
+
 const authRoutes = new Router();
 
 const usuarioRepository = AppDataSource.getRepository(UsuarioEntity);
@@ -27,6 +31,12 @@ const usuarioRepository = AppDataSource.getRepository(UsuarioEntity);
 const petRepository = AppDataSource.getRepository(PetEntity);
 
 const larAdotivoRepository = AppDataSource.getRepository(LarAdotivoEntity);
+
+const adocaoRepository = AppDataSource.getRepository(AdocaoEntity);
+
+const adocaoHistoricoRepository = AppDataSource.getRepository(
+  AdocaoHistoricoEntity,
+);
 
 authRoutes.post(
   "/auth/usuarios",
@@ -86,7 +96,31 @@ authRoutes.get(
       },
     });
 
-    return response.status(200).send(pets);
+    const petsComLar = await Promise.all(
+      pets.map(async (pet) => {
+        const adocao = await AppDataSource.query(
+          `
+          SELECT la.*
+          FROM adocoes a
+          INNER JOIN adocoes_historico ah
+            ON ah.adocao_id = a.id
+          INNER JOIN lares_adotivos la
+            ON la.id = a.lar_adotivo_id
+          WHERE a.pet_id = $1
+            AND ah.status = 'FINALIZADO'
+          LIMIT 1
+          `,
+          [pet.id],
+        );
+
+        return {
+          ...pet,
+          lar_adotivo: adocao.length > 0 ? adocao[0] : null,
+        };
+      }),
+    );
+
+    return response.status(200).send(petsComLar);
   },
 );
 
@@ -159,16 +193,42 @@ authRoutes.get(
     if (estado) {
       filtros.estado = estado;
     }
+
     if (tipo) {
       filtros.tipo = tipo;
     }
+
     const lares = await larAdotivoRepository.find({
       where: filtros,
       order: {
         criado_em: "ASC",
       },
     });
-    return response.status(200).send(lares);
+
+    const laresComPets = await Promise.all(
+      lares.map(async (lar) => {
+        const pets = await AppDataSource.query(
+          `
+          SELECT DISTINCT p.*
+          FROM pets p
+          INNER JOIN adocoes a
+            ON a.pet_id = p.id
+          INNER JOIN adocoes_historico ah
+            ON ah.adocao_id = a.id
+          WHERE a.lar_adotivo_id = $1
+            AND ah.status = 'FINALIZADO'
+          `,
+          [lar.id],
+        );
+
+        return {
+          ...lar,
+          pets,
+        };
+      }),
+    );
+
+    return response.status(200).send(laresComPets);
   },
 );
 
@@ -194,6 +254,76 @@ authRoutes.patch(
     const larAtualizado = await larAdotivoRepository.save(request.cachorro);
 
     return response.status(200).send(larAtualizado);
+  },
+);
+
+authRoutes.post(
+  "/pets/adotar",
+  autorizarHandler(ROLES.ADMIN),
+  async (request, response) => {
+    const { pet_id, lar_adotivo_id, observacoes } = request.body;
+
+    if (!pet_id || !lar_adotivo_id || !observacoes) {
+      return response.status(400).send({
+        error: "pet_id, lar_adotivo_id e observacoes são obrigatórios.",
+      });
+    }
+
+    const petExiste = await petRepository.existsBy({
+      id: Number(pet_id),
+    });
+
+    if (!petExiste) {
+      return response.status(404).send({
+        error: "Pet não encontrado.",
+      });
+    }
+
+    const larExiste = await larAdotivoRepository.existsBy({
+      id: Number(lar_adotivo_id),
+    });
+
+    if (!larExiste) {
+      return response.status(404).send({
+        error: "Lar adotivo não encontrado.",
+      });
+    }
+
+    const adocaoAtiva = await AppDataSource.query(
+      `
+      SELECT a.id
+      FROM adocoes a
+      INNER JOIN adocoes_historico ah
+        ON ah.adocao_id = a.id
+      WHERE a.pet_id = $1
+        AND ah.status IN ('ANALISE', 'CONCLUIDO', 'FINALIZADO')
+      LIMIT 1
+      `,
+      [pet_id],
+    );
+
+    if (adocaoAtiva.length > 0) {
+      return response.status(CONFLICT_STATUS).send({
+        error: "Este pet já possui uma adoção ativa.",
+      });
+    }
+
+    const novaAdocao = adocaoRepository.create({
+      pet_id,
+      lar_adotivo_id,
+    });
+
+    const adocaoSalva = await adocaoRepository.save(novaAdocao);
+
+    const novoHistorico = adocaoHistoricoRepository.create({
+      adocao_id: adocaoSalva.id,
+      observacao: observacoes,
+      status: "ANALISE",
+    });
+
+    await adocaoHistoricoRepository.save(novoHistorico);
+
+    return response.status(CREATED_STATUS).send(adocaoSalva);
   },
 );
 

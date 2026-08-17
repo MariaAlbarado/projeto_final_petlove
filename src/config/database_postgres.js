@@ -6,7 +6,8 @@ import { CorEntity } from "../entidades/Cor.js";
 import { RacaEntity } from "../entidades/Raca.js";
 import { TipoEntity } from "../entidades/Tipo.js";
 import { LarAdotivoEntity } from "../entidades/LarAdotivo.js";
-
+import { AdocaoEntity } from "../entidades/Adocao.js";
+import { AdocaoHistoricoEntity } from "../entidades/AdocaoHistorico.js";
 const dbPort = Number(process.env.DB_PORT);
 const loggingEnabled = process.env.DB_LOGGING === "true";
 
@@ -26,5 +27,7 @@ export const AppDataSource = new DataSource({
     RacaEntity,
     TipoEntity,
     LarAdotivoEntity,
+    AdocaoHistoricoEntity,
+    AdocaoEntity,
   ],
 });
